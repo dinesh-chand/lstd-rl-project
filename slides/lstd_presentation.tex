@@ -506,7 +506,7 @@
     \column{0.37\textwidth}
     \stat{1.64 $\to$ 0.016}{LSTD RMSE from 1 to $10^4$ trajectories}
     \stat{$\approx$\,0.7}{where the best single TD $\alpha$ (0.3) plateaus}
-    \stat{$\approx$\,2$\times$}{lower error than \emph{oracle-tuned} TD (dashed) at every $n$}
+    \stat{$\approx$\,2$\times$}{lower error than TD with its \emph{best $\alpha$ picked at each $n$} (dashed)}
     \stat{3--4$\times$}{fewer trajectories for the same error}
   \end{columns}
 \end{frame}
@@ -553,26 +553,30 @@
     TD$^\star$ = best of 12 TD configs for that $n$ and $\lambda$.
     \begin{itemize}
       \item $\lambda$ barely matters for LSTD here (features are exact)
-      \item LSTD beats oracle-tuned TD by $2$--$3.5\times$ everywhere
+      \item LSTD beats TD with its best $\alpha$ by $2$--$3.5\times$ everywhere
     \end{itemize}
   \end{columns}
 \end{frame}
 
 \begin{frame}{Novelty: ridge LSTD for very few trajectories}
   \speaker{\memberD}
-  \begin{itemize}
-    \item With 1--10 trajectories, $A$ can be singular or ill-conditioned $\Rightarrow$ $\vth = A^{-1}\mathbf{b}$ is unstable.
-    \item \textbf{Ridge LSTD:}
-      \[ (A + \epsilon I)\,\vth = \mathbf{b} \]
-      (equivalently: recursive LSTD with $B_0 = I/\epsilon$).
-    \item \textbf{Questions:}
-      \begin{enumerate}
-        \item How does the error depend on $\epsilon$ for $n \in \{1, 2, 5, 10\}$?
-        \item Can a small $\epsilon$ make LSTD competitive with the best-tuned TD at 1--5 trajectories?
-        \item What happens beyond the paper: \textbf{19-state random walk} (Sutton \& Barto) with \textbf{weak features} (5 aggregated groups, $V^\pi$ not representable)?
-      \end{enumerate}
-    \item 50 seeds, $\lambda = 0.4$, $\epsilon \in [10^{-4}, 10^2]$; TD reference = best of 5 constant $\alpha$ at each $n$.
-  \end{itemize}
+  \small
+  \textbf{Problem.} With 1--10 trajectories, $A$ can be singular or ill-conditioned $\Rightarrow$ $\vth = A^{-1}\mathbf{b}$ is unstable.
+
+  \vspace{0.5em}
+  \textbf{Questions.}
+  \begin{enumerate}
+    \item[\hl{Q1}] How much $\epsilon$ should we add?
+    \item[\hl{Q2}] With 1--5 trajectories, can it match the best-tuned TD?
+    \item[\hl{Q3}] Does it help beyond the paper: \textbf{19-state random walk} (S\&B) with \textbf{weak features} (5 aggregated groups, $V^\pi$ not representable)?
+  \end{enumerate}
+
+  \vspace{0.3em}
+  \textbf{Method.} Ridge LSTD: solve
+  \[ (A + \epsilon I)\,\vth = \mathbf{b} \]
+  (equivalently: recursive LSTD with $B_0 = I/\epsilon$).
+
+  \textbf{Setup.} 50 seeds, $\lambda = 0.4$, $n \in \{1, 2, 5, 10\}$, $\epsilon \in [10^{-4}, 10^2]$; TD reference = best of 5 constant $\alpha$ at each $n$.
 \end{frame}
 
 \begin{frame}{Novelty: results}
@@ -580,18 +584,20 @@
   \begin{columns}[T]
     \column{0.5\textwidth}
     \centering
-    \includegraphics[width=\linewidth,height=4.3cm,keepaspectratio]{fig5_ridge_boyan.png}
+    \includegraphics[width=\linewidth,height=3.3cm,keepaspectratio]{fig5_ridge_boyan.png}\\[-0.2em]
+    \footnotesize Boyan chain (exact features)
     \column{0.5\textwidth}
     \centering
-    \includegraphics[width=\linewidth,height=4.3cm,keepaspectratio]{fig5_ridge_random_walk.png}
+    \includegraphics[width=\linewidth,height=3.3cm,keepaspectratio]{fig5_ridge_random_walk.png}\\[-0.2em]
+    \footnotesize Random walk (weak features)
   \end{columns}
+  \vspace{0.2em}
   \small
-  \begin{columns}[T]
-    \column{0.5\textwidth}
-    \textbf{Boyan chain:} almost no gain (1--3\% at $\epsilon\approx0.03$). $A$ is already well conditioned; shrinking toward 0 hurts when $V$ is down to $-24$. Plain LSTD already beats TD (1.7 vs.\ 6.5 at $n=1$).
-    \column{0.5\textwidth}
-    \textbf{Random walk, weak features:} $\epsilon \approx 1$--3 \hl{halves the error at $n=1$} (0.83 $\to$ 0.44), matching best-tuned TD (0.43); slightly better than TD at $n = 2, 5$; TD marginally better at $n = 10$.
-  \end{columns}
+  \begin{itemize}
+    \item[\hl{Q1}] \textbf{A sweet spot:} $\epsilon \approx 0.03$ (Boyan), $\epsilon \approx 1$--3 (random walk); larger $\epsilon$ shrinks $\vth \to 0$ and hurts.
+    \item[\hl{Q2}] \textbf{Yes:} random walk, $n=1$: 0.44 vs.\ best TD 0.43. (Boyan: plain LSTD already wins.)
+    \item[\hl{Q3}] \textbf{Helps most here:} error \hl{halved} at $n=1$ (0.83 $\to$ 0.44). Boyan: only 1--3\%.
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{Conclusions and limitations}
@@ -601,7 +607,7 @@
     \column{0.53\textwidth}
     \textbf{Conclusions}
     \begin{itemize}
-      \item \hl{Reproduced the paper:} LSTD beats TD at every $n$, $\lambda$ and step size ($2$--$3.5\times$ below oracle-tuned TD).
+      \item \hl{Reproduced the paper:} LSTD beats TD at every $n$, $\lambda$ and step size ($2$--$3.5\times$ below TD with the best $\alpha$ at each $n$).
       \item TD's best $\alpha$ depends on the data budget; a bad $\alpha$ costs $10$--$100\times$.
       \item LSTD: no step size, insensitive to $\lambda$ here.
       \item Price: $O(K^2)$ per step vs.\ $O(K)$.
